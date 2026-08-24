@@ -89,7 +89,18 @@ agentthread.example.com {
 }
 ```
 
-`caddy` 自动签发 HTTPS。Caddy 开 `flush_interval 1ms`(默认)即保流式即时;若要在网络层确保 SSE 不缓冲,可加:`encode zstd gzip`(可选压缩)。
+`caddy` 自动签发 HTTPS。Caddy 开 `flush_interval 1ms`(默认)即保流式即时;若要在网络层确保 SSE 不缓冲,可加 `encode zstd gzip`(可选)。
+
+### 实测部署样板(已在 vps-2api 上线)
+
+```
+公网 https://agentthread.8108000.xyz (CF 灰云 A 记录 → VPS)
+  → VPS Caddy (自动 TLS)
+  → 127.0.0.1:3100 (Go 代理, systemd 常驻, ~5MB RSS)
+  → 上游 https://axonhub.8108000.xyz/v1 (UPSTREAM_API_KEY)
+```
+
+关键坑:转发 `base/v1/responses` 时,若用 `target.Path = "responses"` 会覆盖 base 的 `/v1` 前缀 → 请求 `.../responses` → 上游 nginx 当 SPA fallback 返回 index.html。**必须用 `url.JoinPath(base, suffix)` 保留前缀**(本仓库已修复)。
 
 ## FAQ
 
