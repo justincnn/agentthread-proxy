@@ -66,8 +66,14 @@ func authenticate(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func proxy(w http.ResponseWriter, r *http.Request) {
-	target := *upstreamBase
-	target.Path = strings.TrimPrefix(r.URL.Path, "/v1/")
+	// base 末尾带 /v1/, JoinPath 精确拼接保留前缀(覆盖 Path 会丢 /v1)
+	suffix := strings.TrimPrefix(r.URL.Path, "/v1/")
+	joined, jerr := url.JoinPath(upstreamBase.String(), suffix)
+	if jerr != nil {
+		jsonErr(w, http.StatusBadRequest, "Invalid request path", "invalid_request_error")
+		return
+	}
+	target, err := url.Parse(joined)
 	target.RawQuery = r.URL.RawQuery
 
 	req, err := http.NewRequestWithContext(r.Context(), r.Method, target.String(), r.Body)
