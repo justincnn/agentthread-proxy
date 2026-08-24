@@ -1,0 +1,5 @@
+/agentthread
+/agentthread-amd64
+.env
+logs/
+node_modules/
